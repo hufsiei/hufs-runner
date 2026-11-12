@@ -23,11 +23,17 @@
   .ptWarn span{flex:1}
   .ptWarn button{flex:none;border:0;background:transparent;color:#5a3d00;font-size:16px;cursor:pointer;padding:2px 6px}
   .help{background:#1d263a;border-radius:14px;padding:12px 14px;margin:12px 0 14px;color:#dbe3f0;font-size:13px;line-height:1.6}
-  .help p{margin:0 0 8px;color:#9fb0c8}
+  .help p{margin:8px 0 0;color:#9fb0c8}
+  .help summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:800;color:#fff;font-size:14px;user-select:none}
+  .help summary::-webkit-details-marker{display:none}
+  .help .tg{font-size:12px;font-weight:700;color:#dbe3f0;background:#2b3752;border-radius:999px;padding:3px 10px}
+  .help .tg::after{content:'설명 펼치기 ▼'}
+  .help[open] .tg::after{content:'설명 접기 ▲'}
+  .help[open] .legend{margin-top:8px}
   .help p b{color:#fff}
   .legend{list-style:none;margin:0;padding:0;display:grid;gap:6px}
   .legend li{display:flex;gap:10px;align-items:baseline}
-  .legend b{flex:none;width:118px;color:#fff;font-size:12px;background:#2b3752;border-radius:6px;padding:2px 8px;text-align:center}
+  .legend b{flex:none;width:128px;color:#fff;font-size:12px;background:#2b3752;border-radius:6px;padding:2px 8px;text-align:center}
   .legend li.no b{background:#7a2e3a}
   .legend li.dbl b{background:#6b4a14}
   .legend li.tri b{background:#7a3d0f}
@@ -78,19 +84,18 @@
     <button type="button" id="ptClose" aria-label="알림 닫기">✕</button>
   </div>
 
-  <div class="help">
-    <p><b>목표</b> 학교 정문까지 달리기. 한 번도 안 부딪히면 <b>08:55 도착</b>, 부딪힐 때마다 도착이 <b>1분씩 늦어져요</b>. 09:00을 넘기면 지각! · <b>07:50부터 10분마다</b> 더 빨라지고 장애물도 많아져요. <b>08:20·08:40에는 확</b> 어려워지고, 08:30부터 2·3단 점프 구간이 늘어나요. <b>08:50부터는 극악 구간</b>(하트 없음)!</p>
-    <p><b>조작</b> 스페이스·↑ 키 또는 화면 클릭(터치)으로 점프 · 공중에서 더 누르면 <b>최대 3단 점프</b> · ❤️ 하트 3개가 모두 없어지면 실패 · 끝나면 화면 클릭(터치)으로 바로 재시작</p>
+  <details class="help" id="help" open>
+    <summary><span class="sumT">📖 게임 방법</span><span class="tg"></span></summary>
+    <p><b>목표</b> 정문까지 달리기 · 무사고면 <b>08:55 도착</b>, 부딪히면 <b>+1분</b> · 09:00 넘으면 지각 · 10분마다 빨라지고 <b>08:50부터 극악</b>(하트 없음)</p>
+    <p><b>조작</b> 스페이스·↑·화면 클릭(터치)으로 점프 · 공중에서 더 누르면 <b>최대 3단</b> · 하트 3개 다 잃으면 실패 · 끝나면 클릭(터치)으로 재시작</p>
     <ul class="legend">
-      <li><b>점프로 피하기</b><span>🚧 공사 고깔 · 💦 물웅덩이 · 🕳️ 열린 맨홀 · ☂️ 우산 행렬 · 📦 택배 카트 · <svg class="pg" viewBox="0 0 36 22" width="22" height="14" aria-hidden="true"><ellipse cx="20" cy="13" rx="13" ry="8" fill="#7d8492"/><circle cx="10" cy="8" r="5.5" fill="#5f6674"/><path d="M5 8 L0 10 L5 11 Z" fill="#f2a65a"/><circle cx="9" cy="7" r="1.2" fill="#1b2333"/><ellipse cx="22" cy="9" rx="10" ry="4" fill="#4f5663" transform="rotate(-12 22 9)"/></svg> 낮게 나는 비둘기 · 🏍️ 갑자기 튀어나오는 오토바이 (오른쪽에 ⚠️ 경고가 깜빡이면 곧 나타나요)</span></li>
-      <li class="no"><b>밟지 않기</b><span>🍬 바닥에 붙은 껌 — 하트는 그대로지만 발이 붙어 잠깐 느려지고 도착이 1분 늦어져요</span></li>
-      <li class="dbl"><b>2단 점프로 피하기</b><span>🚧🚧 긴 공사 구간 (08:00부터)</span></li>
-      <li class="tri"><b>3단 점프로 피하기</b><span>🚧🚧🚧 아주 긴 공사 구간 (08:20부터)</span></li>
-      <li class="no"><b>점프하지 말고 통과</b><span>🎏 축제 현수막 — 머리 위에 걸려 있어요. 그냥 달리면 아래로 지나가요</span></li>
-      <li><b>올라갔다 내려오기</b><span>🪜 계단 (08:00부터) — 점프해서 올라타세요. 옆면에 부딪히면 하트가 줄어요</span></li>
-      <li class="item"><b>아이템</b><span>💗 하트: 체력 1칸 회복 · ⭐ 별: 부(Boo)를 타고 3초 동안 빠르게 날아가요 (장애물 무시, 도착도 빨라져요)</span></li>
+      <li><b>점프</b><span>🚧 고깔 · 💦 웅덩이 · 🕳️ 맨홀 · ☂️ 우산 · 📦 카트 · <svg class="pg" viewBox="0 0 36 22" width="22" height="14" aria-hidden="true"><ellipse cx="20" cy="13" rx="13" ry="8" fill="#7d8492"/><circle cx="10" cy="8" r="5.5" fill="#5f6674"/><path d="M5 8 L0 10 L5 11 Z" fill="#f2a65a"/><circle cx="9" cy="7" r="1.2" fill="#1b2333"/><ellipse cx="22" cy="9" rx="10" ry="4" fill="#4f5663" transform="rotate(-12 22 9)"/></svg> 비둘기 · 🏍️ 오토바이(⚠️ 깜빡이면 등장)</span></li>
+      <li class="dbl"><b>2단·3단 점프</b><span>🚧🚧 긴 공사 구간 2단 · 🚧🚧🚧 아주 긴 공사 구간 3단</span></li>
+      <li class="no"><b>점프 금지·밟지 않기</b><span>🎏 현수막은 그냥 통과 · 🍬 껌 밟으면 +1분</span></li>
+      <li><b>계단</b><span>🪜 점프로 올라탔다 내려오기 (옆면에 부딪히면 −1하트)</span></li>
+      <li class="item"><b>아이템 +50점</b><span>💗 하트 1칸 회복 · ⭐ 별: 부(Boo) 타고 3초 무적 비행</span></li>
     </ul>
-  </div>
+  </details>
 
   <div class="grid">
     <section class="card" id="result" hidden>
@@ -1031,6 +1036,13 @@ refreshTop();
   }
   document.addEventListener('visibilitychange', () => { last = performance.now(); });
   tick(); setInterval(tick, 1000);
+})();
+
+/* 설명 접기 상태 기억 */
+(() => {
+  const h = document.getElementById('help');
+  if (store.get('hufsRunnerHelpClosed', false)) h.open = false;
+  h.addEventListener('toggle', () => store.set('hufsRunnerHelpClosed', !h.open));
 })();
 </script>
 </body>
