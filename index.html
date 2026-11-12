@@ -1038,12 +1038,8 @@ refreshTop();
   tick(); setInterval(tick, 1000);
 })();
 
-/* 설명 접기 상태 기억 */
-(() => {
-  const h = document.getElementById('help');
-  if (store.get('hufsRunnerHelpClosed', false)) h.open = false;
-  h.addEventListener('toggle', () => store.set('hufsRunnerHelpClosed', !h.open));
-})();
+/* 예전 버전에서 저장한 '설명 접힘' 기억은 지움 → 항상 펼친 상태로 시작 */
+try { localStorage.removeItem('hufsRunnerHelpClosed'); } catch(e){}
 </script>
 </body>
 </html>
