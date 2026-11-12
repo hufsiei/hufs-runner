@@ -270,6 +270,15 @@ const score = () => finalScore || Math.floor(Math.min(dist, FINISH) / 10) + bonu
 function hm(min){ const m = Math.floor(min); return String(Math.floor(m/60) % 24).padStart(2,'0') + ':' + String(m % 60).padStart(2,'0'); }
 const clockText = () => hm(START_MIN + clockMin());
 function queueBanner(text){ bannerQ.push(text); }
+// 하트·별이 화면에 들어오면 바로 안내 (보던 안내는 끝나고 다시 보여 줌)
+function itemNotice(it){
+  const text = it.type === 'star'
+    ? '⭐ 별이다! 먹으면 부(Boo) 타고 3초 무적' + (it.high ? ' · 2단 점프로!' : '')
+    : '💗 하트다! 먹으면 체력 1칸 회복';
+  const now = performance.now();
+  if (banner && banner.until - now > 500) bannerQ.unshift(banner.text);
+  banner = {text, until: now + 1600};
+}
 
 /* ---------- 입력 ---------- */
 function press(){
@@ -353,7 +362,7 @@ function spawn(){
 
   if (starT <= 0 && !boosting()){
     const high = Math.random() < .5;
-    items.push({type: 'star', x: mx, y: high ? GY - 190 : GY - 100, ...ITEM.star});
+    items.push({type: 'star', x: mx, y: high ? GY - 190 : GY - 100, high, ...ITEM.star});
     starT = 15 + Math.random()*10;
   } else if (heartT <= 0 && hearts < 3 && st < 7){   // 08:50부터는 하트 없음
     items.push({type: 'heart', x: mx, y: GY - 92 - Math.random()*15, ...ITEM.heart});
@@ -418,7 +427,10 @@ function update(dt){
     o.x -= move + (o.type === 'pigeon' ? 60*dt : o.type === 'bike' ? BIKE_V*dt : 0); o.flap = (o.flap || 0) + dt*14;
   }
   for (const s of steps) s.x -= move;
-  for (const it of items) it.x -= move;
+  for (const it of items){
+    it.x -= move;
+    if (!it.told && it.x < W - 20){ it.told = true; itemNotice(it); }   // 화면에 들어올 때 안내
+  }
   obs = obs.filter(o => o.x + o.w > -60 && !(o.knock > .6));
   steps = steps.filter(s => s.x + s.w > -20);
   items = items.filter(i => i.x > -60 && !i.got);
