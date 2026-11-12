@@ -890,7 +890,7 @@ function draw(){
   ctx.restore();
   if (state !== 'ready') drawHUD();
   const again = nameForm.hidden ? '화면을 클릭(터치)하면 바로 다시 출근!' : '화면 클릭(터치)으로 바로 재도전 · TOP 10 닉네임은 아래에서 등록';
-  if (state === 'ready') centerCard('외대앞역 출근 러너', '스페이스 또는 화면 클릭(터치)으로 출발!', '무사고면 08:55 도착 · 부딪히면 +1분 · 최대 3단 점프');
+  if (state === 'ready') centerCard('외대앞역 출근 러너', '스페이스·↑ 키 또는 화면 클릭(터치)으로 출발!', '무사고면 08:55 도착 · 부딪히면 +1분 · 최대 3단 점프');
   if (state === 'over')  centerCard('출근 실패…', OVER_MSG[lastHit], again);
   if (state === 'clear') centerCard(onTime() ? '정시 출근 성공! 🎉' : '도착… 하지만 지각 😅',
                                     hm(arrival) + ' 도착 · 부딪힘 ' + hits + '번 · ' + finalScore.toLocaleString() + '점', again);
