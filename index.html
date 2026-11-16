@@ -25,6 +25,10 @@
   .ptWarn button{flex:none;border:0;background:transparent;color:#5a3d00;font-size:16px;cursor:pointer;padding:2px 6px}
   .help{background:#1d263a;border-radius:14px;padding:12px 14px;margin:12px 0 14px;color:#dbe3f0;font-size:13px;line-height:1.6}
   .help p{margin:8px 0 0;color:#9fb0c8}
+  .s2new{margin:10px 0 2px;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,rgba(247,183,51,.18),rgba(252,74,26,.14));border:1px solid rgba(247,183,51,.55)}
+  .s2new .s2t{display:inline-block;color:#fff;background:linear-gradient(90deg,#f7b733,#fc4a1a);border-radius:999px;padding:1px 10px;font-size:12px}
+  .s2new ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:3px;color:#ffe9c2}
+  .s2new li b{color:#fff}
   .help summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:800;color:#fff;font-size:14px;user-select:none}
   .help summary::-webkit-details-marker{display:none}
   .help .tg{font-size:12px;font-weight:700;color:#dbe3f0;background:#2b3752;border-radius:999px;padding:3px 10px}
@@ -101,6 +105,14 @@
 
   <details class="help" id="help" open>
     <summary><span class="sumT">📖 게임 방법</span><span class="tg"></span></summary>
+    <div class="s2new">
+      <b class="s2t">🆕 시즌2 달라진 점</b>
+      <ul>
+        <li>🔥 <b>연속 회피 콤보</b> — 안 부딪히고 장애물을 넘을 때마다 <b>10점 → 최대 50점</b> (부딪히면 콤보 초기화)</li>
+        <li>⭐ <b>높은 별 +100점</b> — 2단 점프로만 닿는 별은 두 배</li>
+        <li>💗 <b>남은 하트 보너스</b> — 정문 도착 시 하트 1개당 <b>+300점</b></li>
+      </ul>
+    </div>
     <p><b>목표</b> 정문까지 달리기 · 무사고면 <b>08:55 도착</b>, 부딪히면 <b>+1분</b> · 09:00 넘으면 지각 · 10분마다 빨라지고 <b>08:50부터 극악</b>(하트 없음)</p>
     <p><b>조작</b> 스페이스·↑·화면 클릭(터치)으로 점프 · 공중에서 더 누르면 <b>최대 3단</b> · 하트 3개 다 잃으면 실패 · 끝나면 클릭(터치)으로 재시작</p>
     <ul class="legend">
@@ -109,7 +121,6 @@
       <li class="no"><b>점프 금지·밟지 않기</b><span>🎏 현수막은 그냥 통과 · 🍬 껌 밟으면 +1분</span></li>
       <li><b>계단</b><span>🪜 점프로 올라탔다 내려오기 (옆면에 부딪히면 −1하트)</span></li>
       <li class="item"><b>아이템 +50점</b><span>💗 하트 1칸 회복 · ⭐ 별: 부(Boo) 타고 3초 무적 비행 (높은 별은 +100점)</span></li>
-      <li class="item"><b>시즌2 보너스</b><span>🔥 안 부딪히고 연속으로 넘으면 콤보 10→50점 · 🏫 도착 시 남은 하트 1개당 +300점</span></li>
     </ul>
   </details>
 
@@ -940,6 +951,18 @@ function drawHUD(){
     ctx.globalAlpha = 1;
   }
 }
+// 대기 화면: 시즌2 달라진 점
+function drawSeason2Box(){
+  const bx = W/2 - 250, by = 232, bw = 500, bh = 92;
+  ctx.fillStyle = 'rgba(255,255,255,.94)'; rr(bx, by, bw, bh, 14);
+  const g = ctx.createLinearGradient(bx, 0, bx + 150, 0); g.addColorStop(0, '#f7b733'); g.addColorStop(1, '#fc4a1a');
+  ctx.fillStyle = g; rr(bx + 14, by - 12, 150, 24, 12);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = `800 13px ${FONT}`; ctx.fillText('🆕 시즌2 달라진 점', bx + 89, by + 5);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#1b2333'; ctx.font = `700 14px ${FONT}`;
+  ctx.fillText('🔥 연속 회피 콤보: 넘을 때마다 10점 → 최대 50점', bx + 22, by + 34);
+  ctx.fillText('⭐ 높은 별(2단 점프) +100점', bx + 22, by + 57);
+  ctx.fillText('💗 정문 도착 시 남은 하트 1개당 +300점', bx + 22, by + 80);
+}
 function centerCard(title, sub, sub2){
   ctx.fillStyle = 'rgba(14,20,34,.55)'; ctx.fillRect(0, 0, W, H);
   ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
@@ -969,7 +992,10 @@ function draw(){
     centerCard('다시 도전하시겠습니까?', '한 번 더 클릭(터치)하면 다시 출발해요',
                nameForm.hidden ? '' : '⚠️ 아직 닉네임을 등록하지 않았어요 — 등록은 게임 화면 아래에서');
   }
-  else if (state === 'ready') centerCard('훕스러너 시즌2', '스페이스·↑ 키 또는 화면 클릭(터치)으로 출발!', '무사고면 08:55 도착 · 부딪히면 +1분 · 최대 3단 점프');
+  else if (state === 'ready'){
+    centerCard('훕스러너 시즌2', '스페이스·↑ 키 또는 화면 클릭(터치)으로 출발!', '무사고면 08:55 도착 · 부딪히면 +1분 · 최대 3단 점프');
+    drawSeason2Box();
+  }
   else if (state === 'over')  centerCard('출근 실패…', OVER_MSG[lastHit], again);
   else if (state === 'clear') centerCard(onTime() ? '정시 출근 성공! 🎉' : '도착… 하지만 지각 😅',
                                     hm(arrival) + ' 도착 · 부딪힘 ' + hits + '번 · ' + finalScore.toLocaleString() + '점', again);
