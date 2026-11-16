@@ -49,7 +49,13 @@
   .card.hof{background:linear-gradient(180deg,#fff8e1,#ffffff 120px)}
   .card .tag{font-size:11px;font-weight:800;color:#fff;background:#f08a24;border-radius:999px;padding:1px 8px;vertical-align:2px}
   .card .tag.gray{background:#8a94a6}
-  .card.s1{grid-column:1 / -1;background:#eef1f6}
+  .past{margin-top:12px;border-top:1px dashed #d9dee7;padding-top:10px}
+  .past summary{cursor:pointer;font-size:13px;font-weight:700;color:#5b6475;list-style:none;display:flex;justify-content:space-between}
+  .past summary::-webkit-details-marker{display:none}
+  .past summary::after{content:'펼치기 ▼';font-weight:600;font-size:12px}
+  .past[open] summary::after{content:'접기 ▲'}
+  .past .sub{margin:8px 0 6px}
+  .past ol{opacity:.85}
   .boardNote{text-align:center;margin:8px 0 0}
   .card{background:var(--card);border-radius:14px;padding:18px}
   .card h2{font-size:16px;margin:0 0 10px}
@@ -136,11 +142,11 @@
       <h2>🏆 명예의 전당 <small class="tag">시즌2</small></h2>
       <p class="sub">시즌2 모든 기록 중 TOP 10</p>
       <ol id="topList"></ol>
-    </section>
-    <section class="card s1" id="s1Board" hidden>
-      <h2>🗂️ 시즌1 명예의 전당 <small class="tag gray">종료</small></h2>
-      <p class="sub">시즌1(콤보·남은 하트 보너스 도입 전) 최종 TOP 10</p>
-      <ol id="s1List"></ol>
+      <details class="past" id="s1Board" hidden>
+        <summary>🗂️ 지난 시즌 기록 보기</summary>
+        <p class="sub">시즌1 명예의 전당 최종 TOP 10 <small class="tag gray">종료</small></p>
+        <ol id="s1List"></ol>
+      </details>
     </section>
   </div>
   <p class="note boardNote" id="boardNote"></p>
