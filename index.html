@@ -40,8 +40,13 @@
   .legend li.item b{background:#1f5a44}
   .legend .pg{vertical-align:-2px}
   @media (max-width:520px){.legend li{flex-direction:column;gap:2px}.legend b{width:auto}}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media (max-width:640px){.grid{grid-template-columns:1fr}h1{font-size:18px}}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px}
+  .grid:has(> [hidden]:only-child){margin-bottom:0}
+  .boards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:640px){.boards{grid-template-columns:1fr}h1{font-size:18px}}
+  .card .sub{margin:-6px 0 10px;font-size:12px;color:var(--muted)}
+  .card.hof{background:linear-gradient(180deg,#fff8e1,#ffffff 120px)}
+  .boardNote{text-align:center;margin:8px 0 0}
   .card{background:var(--card);border-radius:14px;padding:18px}
   .card h2{font-size:16px;margin:0 0 10px}
   #result[hidden],#nameForm[hidden]{display:none}
@@ -103,7 +108,7 @@
       <p class="msg" id="overMsg"></p>
       <p class="big" id="finalScore">0<span> 점</span></p>
       <form id="nameForm" hidden autocomplete="off">
-        <label for="nameInput">🎉 TOP 10 진입! 닉네임을 남겨 주세요</label>
+        <label for="nameInput" id="nameLabel">🎉 TOP 10 진입! 닉네임을 남겨 주세요</label>
         <div class="row">
           <input id="nameInput" maxlength="10" placeholder="닉네임 (최대 10자)">
           <button class="btn" type="submit" id="submitBtn">등록</button>
@@ -114,12 +119,21 @@
       <button class="btn" id="retryBtn" type="button">다시 출근하기</button>
     </section>
 
-    <section class="card" id="board">
-      <h2>🏆 출근왕 TOP 10</h2>
+  </div>
+
+  <div class="boards">
+    <section class="card" id="weekBoard">
+      <h2>📅 이번 주 TOP 10</h2>
+      <p class="sub" id="weekRange">매주 월요일 오전 9시에 새로 시작해요</p>
+      <ol id="weekList"></ol>
+    </section>
+    <section class="card hof" id="board">
+      <h2>🏆 명예의 전당</h2>
+      <p class="sub">지금까지 모든 기록 중 TOP 10</p>
       <ol id="topList"></ol>
-      <p class="note" id="boardNote"></p>
     </section>
   </div>
+  <p class="note boardNote" id="boardNote"></p>
 
   <footer>스트레스 해소용 미니게임 · 랭킹에는 닉네임과 점수만 저장됩니다<br>점수 = 달린 거리 + 하트·별 1개당 50점 + 도착 보너스(2,000점 + 09:15보다 1분 일찍 올 때마다 100점)<br>캐릭터 부(Boo) © 한국외국어대학교</footer>
 </div>
@@ -284,7 +298,10 @@ function itemNotice(it){
 function press(){
   if (state === 'ready'){ start(); return; }
   if (state === 'over' || state === 'clear'){
-    if (performance.now() - overAt < 400) return;
+    const now = performance.now();
+    if (now - overAt < 400) return;
+    if (!askRetry){ askRetry = true; askAt = now; return; }   // 첫 클릭: "다시 도전하시겠습니까?"
+    if (now - askAt < 250) return;                            // 두 번 연달아 눌린 것 방지
     start(); return;
   }
   if (boosting()) return;
@@ -301,8 +318,9 @@ addEventListener('keydown', e => {
 });
 cv.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
 
+let askRetry = false, askAt = 0;
 function start(){
-  reset(); state = 'play';
+  reset(); state = 'play'; askRetry = false;
   if (nameForm.hidden) document.getElementById('result').hidden = true;
 }
 
@@ -901,10 +919,14 @@ function draw(){
   }
   ctx.restore();
   if (state !== 'ready') drawHUD();
-  const again = nameForm.hidden ? '화면을 클릭(터치)하면 바로 다시 출근!' : '화면 클릭(터치)으로 바로 재도전 · TOP 10 닉네임은 아래에서 등록';
-  if (state === 'ready') centerCard('외대앞역 출근 러너', '스페이스·↑ 키 또는 화면 클릭(터치)으로 출발!', '무사고면 08:55 도착 · 부딪히면 +1분 · 최대 3단 점프');
-  if (state === 'over')  centerCard('출근 실패…', OVER_MSG[lastHit], again);
-  if (state === 'clear') centerCard(onTime() ? '정시 출근 성공! 🎉' : '도착… 하지만 지각 😅',
+  const again = nameForm.hidden ? '화면을 클릭(터치)하면 다시 도전할 수 있어요' : '🎉 랭킹 진입! 닉네임은 아래에서 등록 · 화면 클릭(터치)은 다시 도전';
+  if ((state === 'over' || state === 'clear') && askRetry){
+    centerCard('다시 도전하시겠습니까?', '한 번 더 클릭(터치)하면 다시 출발해요',
+               nameForm.hidden ? '' : '⚠️ 아직 닉네임을 등록하지 않았어요 — 등록은 게임 화면 아래에서');
+  }
+  else if (state === 'ready') centerCard('외대앞역 출근 러너', '스페이스·↑ 키 또는 화면 클릭(터치)으로 출발!', '무사고면 08:55 도착 · 부딪히면 +1분 · 최대 3단 점프');
+  else if (state === 'over')  centerCard('출근 실패…', OVER_MSG[lastHit], again);
+  else if (state === 'clear') centerCard(onTime() ? '정시 출근 성공! 🎉' : '도착… 하지만 지각 😅',
                                     hm(arrival) + ' 도착 · 부딪힘 ' + hits + '번 · ' + finalScore.toLocaleString() + '점', again);
 }
 
@@ -940,22 +962,36 @@ function checkName(raw){
   return {name: n};
 }
 
-function localTop(){ return store.get('hufsRunnerTop', []); }
+// 시험 모드(LEADERBOARD_URL 비었을 때)는 이 브라우저에 모든 기록을 시각과 함께 저장
+function localAll(){ return store.get('hufsRunnerRecs', []); }
 // 순위: 점수 높은 순, 점수가 같으면 실제 걸린 시간(dur, 초)이 짧은 순
 const durOf = e => (e && typeof e.dur === 'number') ? e.dur : Infinity;
 const rankCmp = (a, b) => (b.score - a.score) || (durOf(a) - durOf(b));
 const sec1 = d => Math.round(d*10)/10;
-async function fetchTop(){
-  if (!LEADERBOARD_URL) return localTop().sort(rankCmp);
+// 이번 주 시작: 가장 최근 월요일 오전 9시(한국 시간) — 서버와 같은 계산
+function weekStart(now){
+  const KST = 9*3600e3, DAY = 864e5, d = new Date(now + KST);
+  let st = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - (d.getUTCDay() + 6) % 7, 9) - KST;
+  if (st > now) st -= 7*DAY;
+  return st;
+}
+function localBoards(){
+  const all = localAll(), ws = weekStart(Date.now());
+  return {top: all.slice().sort(rankCmp).slice(0, 10), week: all.filter(e => e.t >= ws).sort(rankCmp).slice(0, 10), weekStart: ws};
+}
+function norm(j){
+  const top = (j.top || []).sort(rankCmp);
+  return {top, week: Array.isArray(j.week) ? j.week.sort(rankCmp) : top, weekStart: j.weekStart || weekStart(Date.now())};
+}
+async function fetchBoards(){
+  if (!LEADERBOARD_URL) return localBoards();
   const r = await fetch(LEADERBOARD_URL + '?action=top');
-  const j = await r.json();
-  return (j.top || []).sort(rankCmp);
+  return norm(await r.json());
 }
 async function submitScore(name, s, dur){
   if (!LEADERBOARD_URL){
-    const t = localTop(); t.push({name, score: s, dur: sec1(dur)});
-    t.sort(rankCmp); const top = t.slice(0, 10);
-    store.set('hufsRunnerTop', top); return top;
+    const all = localAll(); all.push({name, score: s, dur: sec1(dur), t: Date.now()});
+    store.set('hufsRunnerRecs', all.slice(-300)); return localBoards();
   }
   const r = await fetch(LEADERBOARD_URL, {
     method: 'POST',
@@ -964,28 +1000,38 @@ async function submitScore(name, s, dur){
   });
   const j = await r.json();
   if (!j.ok) throw new Error(j.error || '등록 실패');
-  return (j.top || []).sort(rankCmp);
+  return norm(j);
 }
 
-function renderTop(top){
-  topCache = top;
-  topList.textContent = '';
-  if (!top.length){ const p = document.createElement('p'); p.className = 'empty'; p.textContent = '아직 기록이 없어요. 첫 출근왕이 되어 보세요!'; topList.appendChild(p); return; }
+const weekList = document.getElementById('weekList');
+let weekCache = [];
+function fillList(el, list, emptyText){
+  el.textContent = '';
+  if (!list.length){ const p = document.createElement('p'); p.className = 'empty'; p.textContent = emptyText; el.appendChild(p); return; }
   let marked = false;
-  top.slice(0, 10).forEach((e, i) => {
+  list.slice(0, 10).forEach((e, i) => {
     const li = document.createElement('li');
     if (myEntry && !marked && e.name === myEntry.name && e.score === myEntry.score && durOf(e) === myEntry.dur){ li.className = 'me'; marked = true; }
     const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = i + 1;
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = e.name;
     const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = Number(e.score).toLocaleString() + '점';
     if (isFinite(durOf(e))){ const tm = document.createElement('small'); tm.className = 'tm'; tm.textContent = ' · ' + durOf(e).toFixed(1) + '초'; sc.appendChild(tm); }
-    li.append(rk, nm, sc); topList.appendChild(li);
+    li.append(rk, nm, sc); el.appendChild(li);
   });
 }
-async function refreshTop(){
-  try{ renderTop(await fetchTop()); }
-  catch(e){ topList.innerHTML = '<p class="empty">랭킹을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>'; }
+function renderBoards(b){
+  topCache = b.top; weekCache = b.week;
+  fillList(weekList, b.week, '이번 주 기록이 아직 없어요. 이번 주 첫 출근왕이 되어 보세요!');
+  fillList(topList, b.top, '아직 기록이 없어요. 첫 출근왕이 되어 보세요!');
+  const st = new Date(b.weekStart + 9*3600e3);   // 한국 시각 표시용
+  document.getElementById('weekRange').textContent =
+    (st.getUTCMonth() + 1) + '/' + st.getUTCDate() + '(월) 09:00부터 집계 · 매주 월요일 오전 9시 초기화';
 }
+async function refreshTop(){
+  try{ renderBoards(await fetchBoards()); }
+  catch(e){ for (const el of [weekList, topList]) el.innerHTML = '<p class="empty">랭킹을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>'; }
+}
+const inTop10 = (run, list) => list.length < 10 || rankCmp(run, list[9]) < 0;
 
 async function showResult(s){
   lastRun = {score: s, dur: sec1(time)};
@@ -997,8 +1043,11 @@ async function showResult(s){
   document.getElementById('finalScore').innerHTML = s.toLocaleString() + '<span> 점</span>';
   nameErr.textContent = ''; nameForm.hidden = true;
   resultEl.hidden = false;
-  try{ topCache = await fetchTop(); }catch(e){}
-  const qualifies = s > 0 && (topCache.length < 10 || rankCmp(lastRun, topCache[9]) < 0);
+  try{ const b = await fetchBoards(); topCache = b.top; weekCache = b.week; }catch(e){}
+  const inHof = s > 0 && inTop10(lastRun, topCache), inWeek = s > 0 && inTop10(lastRun, weekCache);
+  const qualifies = inHof || inWeek;
+  document.getElementById('nameLabel').textContent = inHof
+    ? '🏆 명예의 전당 진입! 닉네임을 남겨 주세요' : '🎉 이번 주 TOP 10 진입! 닉네임을 남겨 주세요';
   nameForm.hidden = !qualifies;
   if (qualifies) nameInput.value = store.get('hufsRunnerNick', '');
   if (innerWidth < 700) resultEl.scrollIntoView({behavior: 'smooth', block: 'nearest'});
@@ -1010,10 +1059,10 @@ nameForm.addEventListener('submit', async e => {
   if (c.err){ nameErr.textContent = c.err; return; }
   const btn = document.getElementById('submitBtn'); btn.disabled = true; nameErr.textContent = '등록 중…';
   try{
-    const top = await submitScore(c.name, lastRun.score, lastRun.dur);
+    const boards = await submitScore(c.name, lastRun.score, lastRun.dur);
     store.set('hufsRunnerNick', c.name);
     myEntry = {name: c.name, score: lastRun.score, dur: lastRun.dur};
-    renderTop(top); nameForm.hidden = true; nameErr.textContent = '';
+    renderBoards(boards); nameForm.hidden = true; nameErr.textContent = '';
   }catch(err){ nameErr.textContent = '등록하지 못했어요: ' + err.message; }
   btn.disabled = false;
 });
