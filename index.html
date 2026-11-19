@@ -25,6 +25,15 @@
   .ptWarn button{flex:none;border:0;background:transparent;color:#5a3d00;font-size:16px;cursor:pointer;padding:2px 6px}
   .help{background:#1d263a;border-radius:14px;padding:12px 14px;margin:12px 0 14px;color:#dbe3f0;font-size:13px;line-height:1.6}
   .help p{margin:8px 0 0;color:#9fb0c8}
+  .nm .md,.modes .md{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:0 6px;margin-left:2px;color:#fff;vertical-align:1px}
+  .modes{margin:10px 0 2px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}
+  .modes small{color:#9aa6b8}
+  .modes ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+  .modes li{line-height:1.5;word-break:keep-all;overflow-wrap:anywhere}
+  .modes .md{font-size:12px;padding:1px 8px;margin:0 4px 0 0}
+  .modes em{font-style:normal;color:#ffd34d;font-weight:700;margin-left:4px}
+  .modes .mnote{margin:6px 0 0;color:#9aa6b8;font-size:12px}
+  .md-easy{background:#2e9e5b}.md-normal{background:#1f4e9c}.md-hard{background:#c0392b}
   .s2new{margin:10px 0 2px;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,rgba(247,183,51,.18),rgba(252,74,26,.14));border:1px solid rgba(247,183,51,.55)}
   .s2new .s2t{display:inline-block;color:#fff;background:linear-gradient(90deg,#f7b733,#fc4a1a);border-radius:999px;padding:1px 10px;font-size:12px}
   .s2new ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:3px;color:#ffe9c2}
@@ -112,6 +121,15 @@
         <li>⭐ <b>높은 별 +100점</b> — 2단 점프로만 닿는 별은 두 배</li>
         <li>💗 <b>남은 하트 보너스</b> — 정문 도착 시 하트 1개당 <b>+300점</b></li>
       </ul>
+    </div>
+    <div class="modes">
+      <b>난이도</b> <small>시작 화면에서 고르기 · 키보드 1·2·3</small>
+      <ul>
+        <li><span class="md md-easy">🐣 초보</span> 느리고 널널 · 별(부스터) 자주 · 08:50에도 하트<br><em>콤보 최대 30점 · 완주 +1,500</em></li>
+        <li><span class="md md-normal">🏃 중간</span> 지금 시즌2 그대로<br><em>콤보 최대 50점 · 완주 +2,000</em></li>
+        <li><span class="md md-hard">🔥 고수</span> 더 빠르고 촘촘 · 어려운 장애물 많음<br><em>어려운 장애물 콤보 최대 80점 · 완주 +3,500</em></li>
+      </ul>
+      <p class="mnote">최고점은 초보 &lt; 중간 &lt; 고수 · 랭킹은 함께 겨루고 닉네임 옆에 난이도 표시</p>
     </div>
     <p><b>목표</b> 정문까지 달리기 · 무사고면 <b>08:55 도착</b>, 부딪히면 <b>+1분</b> · 09:00 넘으면 지각 · 10분마다 빨라지고 <b>08:50부터 극악</b>(하트 없음)</p>
     <p><b>조작</b> 스페이스·↑·화면 클릭(터치)으로 점프 · 공중에서 더 누르면 <b>최대 3단</b> · 하트 3개 다 잃으면 실패 · 끝나면 클릭(터치)으로 재시작</p>
@@ -223,22 +241,51 @@ const STAGE_AT    = [0,   10,  20,  30,  40,  50,  60,  70];   // 07:40, 07:50, 
 const STAGE_SPEED = [360, 440, 510, 570, 690, 760, 890, 1040];
 const ARRIVE_MIN = 75;                          // 무사고 도착 08:55
 const HIT_PENALTY = 1;                          // 부딪힐 때마다 +1분
+
+/* ---------- 난이도 모드 (중간 = 기존 시즌2 그대로) ----------
+   점수 설계: 초보 최고점 < 중간 최고점 < 고수 최고점 (cap으로 한 번 더 보장)
+   완벽 주행 시뮬레이션(2026-11-19): 초보 약 11,100~11,500 · 중간 약 13,900~14,900 · 고수 약 17,900~19,000 */
+const MODES = {
+  easy:   {key: 'easy',   label: '초보', icon: '🐣', color: '#2e9e5b',
+           speed: .85, gap: 1.3, star: [8, 13], heart: [12, 18], heartLast: true,
+           combo: c => Math.min(30, 3 + 3*c), hardMul: 1, clear: 1500, heartLeft: 200, cap: 12000,
+           desc: ['느리고 널널 · 별(부스터) 자주', '콤보 최대 30점 · 완주 +1,500']},
+  normal: {key: 'normal', label: '중간', icon: '🏃', color: '#1f4e9c',
+           speed: 1, gap: 1, star: [15, 25], heart: [18, 30], heartLast: false,
+           combo: c => Math.min(50, 5 + 5*c), hardMul: 1, clear: 2000, heartLeft: 300, cap: 15500,
+           desc: ['지금 시즌2 그대로', '콤보 최대 50점 · 완주 +2,000']},
+  hard:   {key: 'hard',   label: '고수', icon: '🔥', color: '#c0392b',
+           speed: 1.12, gap: .88, star: [20, 30], heart: [24, 36], heartLast: false,
+           combo: c => Math.min(50, 5 + 5*c), hardMul: 1.6, clear: 3500, heartLeft: 400, cap: 21000,
+           desc: ['더 빠르고 촘촘 · 어려운 장애물 많음', '콤보 최대 80점 · 완주 +3,500']}
+};
+const MODE_KEYS = ['easy', 'normal', 'hard'];
+let M = MODES[(() => { try { const k = JSON.parse(localStorage.getItem('hufsRunnerMode')); return MODES[k] ? k : 'normal'; } catch(e){ return 'normal'; } })()];
+// 어려운 장애물(콤보 가산 대상): 2·3단 공사 구간, 계단, 비둘기, 오토바이, 현수막
+const HARD_TYPES = ['coneRow', 'coneRowLong', 'stairs', 'pigeon', 'bike', 'banner'];
+
 const stageOf = cm => { let s = 0; while (s + 1 < STAGE_AT.length && cm >= STAGE_AT[s + 1]) s++; return s; };
-const targetSpeed = cm => { const s = stageOf(cm); return STAGE_SPEED[s] + (s >= 7 ? 8 : 3)*(cm - STAGE_AT[s]); };
+const targetSpeed = cm => { const s = stageOf(cm); return (STAGE_SPEED[s] + (s >= 7 ? 8 : 3)*(cm - STAGE_AT[s]))*M.speed; };
 function stepSpeed(v, cm, dt){ return v + (targetSpeed(cm) - v)*Math.min(1, dt*3); }
 // 게임 1분이 실제 몇 초인지: 08:40부터 1.3초, 08:50부터 2.4초 → 극악 구간을 오래 버텨야 함
 const SEC_PER_MIN = cm => cm >= 70 ? 2.4 : cm >= 60 ? 1.3 : 1;
-// 무사고 주행을 미리 시뮬레이션해 '달린 거리 → 게임 분' 표를 만든다
-const CLOCK_D = [0], CLOCK_M = [0];
-const FINISH = (() => {
-  let v = STAGE_SPEED[0], d = 0, cm = 0, k = 0; const dt = 1/240;
+// 무사고 주행을 미리 시뮬레이션해 '달린 거리 → 게임 분' 표를 만든다 (모드마다 속도가 달라 다시 계산)
+let CLOCK_D, CLOCK_M, FINISH;
+function buildClock(){
+  CLOCK_D = [0]; CLOCK_M = [0];
+  let v = STAGE_SPEED[0]*M.speed, d = 0, cm = 0, k = 0; const dt = 1/240;
   while (cm < ARRIVE_MIN){
     v = stepSpeed(v, cm, dt); d += v*dt; cm += dt/SEC_PER_MIN(cm);
     if (++k % 12 === 0){ CLOCK_D.push(d); CLOCK_M.push(Math.min(cm, ARRIVE_MIN)); }
   }
   CLOCK_D.push(d); CLOCK_M.push(ARRIVE_MIN);
-  return d;
-})();
+  FINISH = d;
+}
+buildClock();
+function setMode(k){
+  if (!MODES[k] || state === 'play') return;
+  M = MODES[k]; store.set('hufsRunnerMode', k); buildClock(); if (state === 'ready') reset();
+}
 function minOfDist(x){
   if (x >= FINISH) return ARRIVE_MIN;
   let lo = 0, hi = CLOCK_D.length - 1;
@@ -297,9 +344,9 @@ const STAGE_MSG = ['', '🚶 07:50 — 조금 빨라져요', '🚃 08:00 — 속
 function reset(){
   player = {x: 90, y: GY, vy: 0, w: 30, h: 56, jumps: 0, onGround: true};
   obs = []; steps = []; items = []; floaters = [];
-  speed = STAGE_SPEED[0]; dist = 0; time = 0; penalty = 0; hits = 0; spawnD = 520;
+  speed = STAGE_SPEED[0]*M.speed; dist = 0; time = 0; penalty = 0; hits = 0; spawnD = 520;
   hearts = 3; hurtUntil = 0; boostUntil = 0; lastHit = 'cone'; lastStairs = -99;
-  starT = 12 + Math.random()*6; heartT = 18 + Math.random()*8;
+  starT = M.key === 'easy' ? 6 + Math.random()*4 : 12 + Math.random()*6; heartT = 18 + Math.random()*8;
   stageNow = 0; seen = {}; bannerQ = ['출근 시작! 정문까지 달려요 🏃']; banner = null;
   arrival = 0; finalScore = 0; bonus = 0; prevType = "";
   groups = []; combo = 0; maxCombo = 0; comboPop = 0; heartBonus = 0;
@@ -309,14 +356,16 @@ reset();
 const boosting = () => state === 'play' && time < boostUntil;
 const clockMin = () => minOfDist(dist) + penalty;                      // 출발 후 지난 '게임 분'
 const HIGH_STAR_BONUS = 100;                     // 2단 점프로만 닿는 높은 별
-const HEART_LEFT_BONUS = 300;                   // 도착 시 남은 하트 1개당
-const comboPts = c => Math.min(50, 5 + 5*c);    // 콤보 1 → 10점 … 콤보 9 이상 → 50점
-function comboUp(){
+// 콤보 점수: 중간·고수 1 → 10점 … 9 이상 → 50점 / 초보 1 → 6점 … 9 이상 → 30점
+// 고수는 어려운 장애물을 넘으면 1.6배(최대 80점)
+let lastComboPts = 0;
+const comboPts = (c, g) => Math.round(M.combo(c)*(g && g.hard ? M.hardMul : 1));
+function comboUp(g){
   combo++; maxCombo = Math.max(maxCombo, combo);
-  const pts = comboPts(combo); bonus += pts; comboPop = .5;
+  const pts = comboPts(combo, g); bonus += pts; comboPop = .5; lastComboPts = pts;
 }
 const ITEM_BONUS = 50;                          // 하트·별 먹을 때마다 +50점
-const score = () => finalScore || Math.floor(Math.min(dist, FINISH) / 10) + bonus;
+const score = () => finalScore || Math.min(M.cap, Math.floor(Math.min(dist, FINISH) / 10) + bonus);
 function hm(min){ const m = Math.floor(min); return String(Math.floor(m/60) % 24).padStart(2,'0') + ':' + String(m % 60).padStart(2,'0'); }
 const clockText = () => hm(START_MIN + clockMin());
 function queueBanner(text){ bannerQ.push(text); }
@@ -351,8 +400,23 @@ function press(){
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){ e.preventDefault(); if (!e.repeat) press(); }
+  const n = ['Digit1', 'Digit2', 'Digit3', 'Numpad1', 'Numpad2', 'Numpad3'].indexOf(e.code);   // 1·2·3 키로 난이도 선택
+  if (n >= 0 && state !== 'play') setMode(MODE_KEYS[n % 3]);
 });
-cv.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+// 대기·다시 도전 화면의 난이도 버튼 (캔버스 좌표)
+let modeRects = [];
+function modeAt(e){
+  const r = cv.getBoundingClientRect(), x = (e.clientX - r.left)*W/r.width, y = (e.clientY - r.top)*H/r.height;
+  const b = modeRects.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+  return b ? b.k : null;
+}
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  const k = state !== 'play' ? modeAt(e) : null;
+  if (k && state === 'ready'){ setMode(k); snd('jump'); return; }   // 대기 화면: 고르기만
+  if (k && askRetry){ setMode(k); start(); return; }                 // 다시 도전 화면: 고른 난이도로 바로 출발
+  press();
+});
 
 let askRetry = false, askAt = 0;
 function start(){
@@ -381,7 +445,16 @@ function spawn(){
   if (st >= 5){ pool.push('coneRowLong', 'coneRowLong', 'coneRow', 'coneRow', 'banner', 'pigeon'); }   // 08:30~ 2·3단 구간 증가
   if (st >= 7){ pool.push('coneRowLong', 'coneRowLong', 'coneRowLong', 'coneRow', 'coneRow', 'banner', 'pigeon'); }   // 08:50~ 극악
   if (st >= 6){ pool.push('coneRowLong', 'coneRow', 'stairs'); }         // 08:40~ 지옥 구간
-  const t = pool[Math.random()*pool.length | 0];
+  let t = pool[Math.random()*pool.length | 0];
+  if (M.key === 'easy'){                         // 초보: 어려운 장애물을 한 단계 쉬운 것으로
+    if (t === 'coneRowLong' && Math.random() < .6) t = 'coneRow';
+    else if (t === 'coneRow' && Math.random() < .4) t = 'cone';
+    else if ((t === 'bike' || t === 'pigeon') && Math.random() < .4) t = 'cone';
+  } else if (M.key === 'hard'){                  // 고수: 한 단계 어려운 것으로
+    if (t === 'coneRow' && st >= 3 && Math.random() < .3) t = 'coneRowLong';
+    else if (t === 'cone' && st >= 2 && Math.random() < .25) t = 'coneRow';
+    else if (t === 'cart' && cm > 12 && Math.random() < .3) t = 'pigeon';
+  }
   if (!seen[t]){ seen[t] = true; if (FIRST_MSG[t]) queueBanner(FIRST_MSG[t]); }
   const x0 = W + 20;
   let len, after = 0;
@@ -403,29 +476,29 @@ function spawn(){
     obs.push({type: t, x, y, w, h, hue: [205,350,40,160,265][Math.random()*5|0], flap: Math.random()*6});
     len = x - x0 + w;
     // 뒤 구간일수록 고깔 2~3개 묶음이 자주 나옴 (한 번 점프로 넘을 수 있는 폭)
-    if (t === 'cone' && Math.random() < [.15, .25, .35, .42, .55, .62, .75, .9][st]){
-      const n = st >= 7 ? 2 : st >= 5 && Math.random() < .5 ? 2 : 1;
+    if (t === 'cone' && Math.random() < [.15, .25, .35, .42, .55, .62, .75, .9][st]*(M.key === 'easy' ? .6 : 1)){
+      const n = st >= 7 && M.key !== 'easy' ? 2 : st >= 5 && Math.random() < .5 ? 2 : 1;
       for (let i = 1; i <= n; i++) obs.push({type: 'cone', x: x + 30*i, y, w, h});
       len += 30*n;
     }
   }
   prevType = t;
   // 한 번에 나온 장애물(고깔 묶음·계단 포함)을 한 그룹으로 → 다 지나가면 콤보 +1
-  const grp = {m: obs.slice(o0).concat(steps.slice(s0)), hit: false, done: false};
+  const grp = {m: obs.slice(o0).concat(steps.slice(s0)), hit: false, done: false, hard: HARD_TYPES.includes(t)};
   for (const o of grp.m) o.g = grp;
   groups.push(grp);
   const [a, b] = GAP[st];
-  const gap = len + after + speed*(a + Math.random()*(b - a)) + (st === 0 ? Math.max(0, 140 - time*3) : 0);
+  const gap = len + after + speed*(a + Math.random()*(b - a))*M.gap + (st === 0 ? Math.max(0, 140 - time*3) : 0);
   spawnD = gap;
   const mx = x0 + len + (gap - len)/2;
 
   if (starT <= 0 && !boosting()){
     const high = Math.random() < .5;
     items.push({type: 'star', x: mx, y: high ? GY - 190 : GY - 100, high, ...ITEM.star});
-    starT = 15 + Math.random()*10;
-  } else if (heartT <= 0 && hearts < 3 && st < 7){   // 08:50부터는 하트 없음
+    starT = M.star[0] + Math.random()*(M.star[1] - M.star[0]);
+  } else if (heartT <= 0 && hearts < 3 && (st < 7 || M.heartLast)){   // 08:50부터는 하트 없음(초보 제외)
     items.push({type: 'heart', x: mx, y: GY - 92 - Math.random()*15, ...ITEM.heart});
-    heartT = 18 + Math.random()*12;
+    heartT = M.heart[0] + Math.random()*(M.heart[1] - M.heart[0]);
   }
 }
 function addFloater(text, x, y, kind){ floaters.push({text, x, y, t: 0, kind: kind || 'text'}); }
@@ -473,7 +546,7 @@ function update(dt){
   if (!playing) return;
 
   const st = stageOf(clockMin());
-  if (st > stageNow){ stageNow = st; bannerQ.unshift(STAGE_MSG[st]); banner = null; snd('up'); }
+  if (st > stageNow){ stageNow = st; bannerQ.unshift(st === 7 && M.heartLast ? '💀 08:50 — 극악 구간! (초보는 하트가 나와요)' : STAGE_MSG[st]); banner = null; snd('up'); }
 
   dist += sp*dt;
   if (dist >= FINISH){ finish(); return; }
@@ -495,7 +568,7 @@ function update(dt){
   for (const g of groups){
     if (g.done || !g.m.every(o => o.knock || o.x + o.w < player.x + 7)) continue;
     g.done = true;
-    if (!g.hit) comboUp();
+    if (!g.hit) comboUp(g);
   }
   groups = groups.filter(g => !g.done);
   items = items.filter(i => i.x > -60 && !i.got);
@@ -572,8 +645,8 @@ function finish(){
   dist = FINISH; player.y = GY; player.vy = 0; player.onGround = true; boostUntil = 0;
   arrival = START_MIN + Math.round(clockMin());      // 프레임 오차(±0.1초) 보정
   const early = Math.max(0, Math.floor(9*60 + 15 - arrival));
-  heartBonus = hearts*HEART_LEFT_BONUS;              // 시즌2: 남은 하트 1개당 +300
-  finalScore = Math.floor(FINISH/10) + bonus + 2000 + early*100 + heartBonus;
+  heartBonus = hearts*M.heartLeft;                   // 남은 하트 1개당 초보 200 · 중간 300 · 고수 400
+  finalScore = Math.min(M.cap, Math.floor(FINISH/10) + bonus + M.clear + early*100 + heartBonus);
   saveBest(finalScore); showResult(finalScore);
 }
 
@@ -919,8 +992,12 @@ function drawHUD(){
   if (combo >= 2){                                   // 시즌2 콤보 표시
     ctx.textAlign = 'left'; ctx.font = `800 ${14 + comboPop*8}px ${FONT}`;
     ctx.fillStyle = combo >= 9 ? '#e5303a' : '#f08a24';
-    ctx.fillText('🔥 ' + combo + '콤보 +' + comboPts(combo), 104, 60);
+    ctx.fillText('🔥 ' + combo + '콤보 +' + lastComboPts, 104, 60);
   }
+  // 난이도 표시 (왼쪽 상자 아래)
+  ctx.textAlign = 'left'; ctx.font = `800 12px ${FONT}`;
+  ctx.fillStyle = M.color; rr(12, 76, ctx.measureText(M.icon + ' ' + M.label + ' 모드').width + 18, 20, 10);
+  ctx.fillStyle = '#fff'; ctx.fillText(M.icon + ' ' + M.label + ' 모드', 21, 90);
 
 
   // 진행 막대: 역 → 정문
@@ -953,15 +1030,51 @@ function drawHUD(){
 }
 // 대기 화면: 시즌2 달라진 점
 function drawSeason2Box(){
-  const bx = W/2 - 250, by = 232, bw = 500, bh = 92;
+  const bx = W/2 - 250, by = 268, bw = 500, bh = 80;
   ctx.fillStyle = 'rgba(255,255,255,.94)'; rr(bx, by, bw, bh, 14);
   const g = ctx.createLinearGradient(bx, 0, bx + 150, 0); g.addColorStop(0, '#f7b733'); g.addColorStop(1, '#fc4a1a');
   ctx.fillStyle = g; rr(bx + 14, by - 12, 150, 24, 12);
   ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = `800 13px ${FONT}`; ctx.fillText('🆕 시즌2 달라진 점', bx + 89, by + 5);
-  ctx.textAlign = 'left'; ctx.fillStyle = '#1b2333'; ctx.font = `700 14px ${FONT}`;
-  ctx.fillText('🔥 연속 회피 콤보: 넘을 때마다 10점 → 최대 50점', bx + 22, by + 34);
-  ctx.fillText('⭐ 높은 별(2단 점프) +100점', bx + 22, by + 57);
-  ctx.fillText('💗 정문 도착 시 남은 하트 1개당 +300점', bx + 22, by + 80);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#1b2333'; ctx.font = `700 13px ${FONT}`;
+  const top = Math.round(M.combo(9)*M.hardMul);
+  ctx.fillText('🔥 연속 회피 콤보: 넘을 때마다 점수 UP (' + M.label + ' 최대 ' + top + '점)', bx + 22, by + 30);
+  ctx.fillText('⭐ 높은 별(2단 점프) +100점', bx + 22, by + 51);
+  ctx.fillText('💗 정문 도착 시 남은 하트 1개당 +' + M.heartLeft + '점 · 완주 +' + M.clear.toLocaleString() + '점', bx + 22, by + 72);
+}
+// 난이도 버튼 3개 (y: 위쪽, bw·bh: 버튼 크기, small: 다시 도전 화면용)
+function drawModeBtns(y, bw, bh, small){
+  const gap = 16, x0 = W/2 - (bw*3 + gap*2)/2;
+  modeRects = [];
+  MODE_KEYS.forEach((k, i) => {
+    const m = MODES[k], x = x0 + i*(bw + gap), on = m === M;
+    modeRects.push({k, x, y, w: bw, h: bh});
+    ctx.fillStyle = on ? m.color : 'rgba(255,255,255,.9)'; rr(x, y, bw, bh, 12);
+    if (on){ ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - 2, y - 2, bw + 4, bh + 4, 14) : ctx.rect(x - 2, y - 2, bw + 4, bh + 4); ctx.stroke(); }
+    ctx.textAlign = 'center'; ctx.fillStyle = on ? '#fff' : m.color;
+    ctx.font = `900 ${small ? 15 : 18}px ${FONT}`;
+    ctx.fillText((i + 1) + '. ' + m.icon + ' ' + m.label + ' 모드', x + bw/2, y + (small ? 21 : 25));
+    if (small){
+      ctx.font = `600 11px ${FONT}`; ctx.fillStyle = on ? 'rgba(255,255,255,.92)' : '#4b5263';
+      ctx.fillText(on ? '지금 난이도' : '눌러서 바로 출발', x + bw/2, y + 39);
+    } else {                                     // 설명 2줄: 특징(회색) / 점수(모드 색)
+      ctx.font = `600 12px ${FONT}`;
+      ctx.fillStyle = on ? 'rgba(255,255,255,.92)' : '#4b5263'; ctx.fillText(m.desc[0], x + bw/2, y + 45, bw - 16);
+      ctx.font = `800 12px ${FONT}`;
+      ctx.fillStyle = on ? '#ffe9a8' : m.color;               ctx.fillText(m.desc[1], x + bw/2, y + 63, bw - 16);
+    }
+  });
+}
+function drawReady(){
+  ctx.fillStyle = 'rgba(14,20,34,.55)'; ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+  ctx.font = `900 32px ${FONT}`; ctx.fillText('훕스러너 시즌2', W/2, 62);
+  ctx.font = `600 16px ${FONT}`; ctx.fillText('난이도를 고르고 출발! (버튼 클릭 또는 키보드 1·2·3)', W/2, 92);
+  drawModeBtns(104, 246, 76, false);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = `700 16px ${FONT}`;
+  ctx.fillText('▶ 스페이스·↑ 키 또는 버튼 밖 화면 클릭(터치)으로 출발!', W/2, 208);
+  ctx.font = `500 13px ${FONT}`; ctx.fillStyle = '#d5dbe6';
+  ctx.fillText('무사고면 08:55 도착 · 부딪히면 +1분 · 최대 3단 점프', W/2, 230);
+  drawSeason2Box();
 }
 function centerCard(title, sub, sub2){
   ctx.fillStyle = 'rgba(14,20,34,.55)'; ctx.fillRect(0, 0, W, H);
@@ -973,6 +1086,7 @@ function centerCard(title, sub, sub2){
 const onTime = () => arrival <= 9*60;
 
 function draw(){
+  modeRects = [];
   ctx.save();
   if (shake > 0) ctx.translate((Math.random() - .5)*12*shake/.35, (Math.random() - .5)*12*shake/.35);
   drawBackground();
@@ -989,13 +1103,11 @@ function draw(){
   if (state !== 'ready') drawHUD();
   const again = nameForm.hidden ? '화면을 클릭(터치)하면 다시 도전할 수 있어요' : '🎉 랭킹 진입! 닉네임은 아래에서 등록 · 화면 클릭(터치)은 다시 도전';
   if ((state === 'over' || state === 'clear') && askRetry){
-    centerCard('다시 도전하시겠습니까?', '한 번 더 클릭(터치)하면 다시 출발해요',
-               nameForm.hidden ? '' : '⚠️ 아직 닉네임을 등록하지 않았어요 — 등록은 게임 화면 아래에서');
+    centerCard('다시 도전하시겠습니까?', '한 번 더 클릭(터치)하면 ' + M.label + ' 모드로 다시 출발해요',
+               nameForm.hidden ? '난이도를 바꾸려면 아래 버튼을 누르세요' : '⚠️ 아직 닉네임을 등록하지 않았어요 — 등록은 게임 화면 아래에서');
+    drawModeBtns(240, 190, 50, true);
   }
-  else if (state === 'ready'){
-    centerCard('훕스러너 시즌2', '스페이스·↑ 키 또는 화면 클릭(터치)으로 출발!', '무사고면 08:55 도착 · 부딪히면 +1분 · 최대 3단 점프');
-    drawSeason2Box();
-  }
+  else if (state === 'ready') drawReady();
   else if (state === 'over')  centerCard('출근 실패…', OVER_MSG[lastHit], again);
   else if (state === 'clear') centerCard(onTime() ? '정시 출근 성공! 🎉' : '도착… 하지만 지각 😅',
                                     hm(arrival) + ' 도착 · 부딪힘 ' + hits + '번 · ' + finalScore.toLocaleString() + '점', again);
@@ -1062,13 +1174,13 @@ async function fetchBoards(){
 }
 async function submitScore(name, s, dur){
   if (!LEADERBOARD_URL){
-    const all = localAll(); all.push({name, score: s, dur: sec1(dur), t: Date.now()});
+    const all = localAll(); all.push({name, score: s, dur: sec1(dur), mode: M.key, t: Date.now()});
     store.set('hufsRunnerRecs', all.slice(-300)); return localBoards();
   }
   const r = await fetch(LEADERBOARD_URL, {
     method: 'POST',
     headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify({name, score: s, dur: sec1(dur)})
+    body: JSON.stringify({name, score: s, dur: sec1(dur), mode: M.key})
   });
   const j = await r.json();
   if (!j.ok) throw new Error(j.error || '등록 실패');
@@ -1086,6 +1198,8 @@ function fillList(el, list, emptyText){
     if (myEntry && !marked && e.name === myEntry.name && e.score === myEntry.score && durOf(e) === myEntry.dur){ li.className = 'me'; marked = true; }
     const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = i + 1;
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = e.name;
+    const md = MODES[e.mode] || MODES.normal;   // 예전 기록(난이도 없음)은 중간 모드
+    const mb = document.createElement('small'); mb.className = 'md md-' + md.key; mb.textContent = md.icon + md.label; nm.append(' ', mb);
     const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = Number(e.score).toLocaleString() + '점';
     if (isFinite(durOf(e))){ const tm = document.createElement('small'); tm.className = 'tm'; tm.textContent = ' · ' + durOf(e).toFixed(1) + '초'; sc.appendChild(tm); }
     li.append(rk, nm, sc); el.appendChild(li);
@@ -1113,8 +1227,8 @@ async function showResult(s){
   const cleared = state === 'clear';
   document.getElementById('resultTitle').textContent = cleared ? (onTime() ? '🎉 정시 출근 성공!' : '😅 도착은 했지만 지각') : '😵 출근 실패';
   document.getElementById('overMsg').textContent = cleared
-    ? hm(arrival) + ' 도착 · 부딪힘 ' + hits + '번 · 최대 ' + maxCombo + '콤보' + (heartBonus ? ' · 남은 하트 +' + heartBonus + '점' : '')
-    : OVER_MSG[lastHit] + ' · ' + clockText() + ' · 진행 ' + Math.floor(Math.min(1, dist/FINISH)*100) + '% · 최대 ' + maxCombo + '콤보';
+    ? M.icon + M.label + ' 모드 · ' + hm(arrival) + ' 도착 · 부딪힘 ' + hits + '번 · 최대 ' + maxCombo + '콤보' + (heartBonus ? ' · 남은 하트 +' + heartBonus + '점' : '')
+    : M.icon + M.label + ' 모드 · ' + OVER_MSG[lastHit] + ' · ' + clockText() + ' · 진행 ' + Math.floor(Math.min(1, dist/FINISH)*100) + '% · 최대 ' + maxCombo + '콤보';
   document.getElementById('finalScore').innerHTML = s.toLocaleString() + '<span> 점</span>';
   nameErr.textContent = ''; nameForm.hidden = true;
   resultEl.hidden = false;
